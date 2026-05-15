@@ -1,8 +1,20 @@
-def build_period_recommendation(top, outer=None, notes=None):
+from config.settings import (
+    COLD_BEDROOM,
+    CHILD_UNCOVERS_AT_NIGHT
+)
+
+
+def build_period_recommendation(
+    top=None,
+    outer=None,
+    sleep_layers=None,
+    notes=None
+):
 
     return {
-        "top": top,
+        "top": top or [],
         "outer": outer,
+        "sleep_layers": sleep_layers or [],
         "notes": notes or []
     }
 
@@ -60,6 +72,60 @@ def get_temperature_profile(weather):
     return "warm"
 
 
+def get_sleep_layers(profile):
+
+    #
+    # Cold
+    #
+
+    if profile == "cold":
+
+        if COLD_BEDROOM and CHILD_UNCOVERS_AT_NIGHT:
+
+            return [
+                "Body interior leve",
+                "Pijama manga comprida quente"
+            ]
+
+        return [
+            "Pijama manga comprida"
+        ]
+
+    #
+    # Mild
+    #
+
+    if profile == "mild":
+
+        if COLD_BEDROOM:
+
+            return [
+                "Pijama manga comprida leve"
+            ]
+
+        return [
+            "Pijama leve"
+        ]
+
+    #
+    # Hot
+    #
+
+    if profile == "hot":
+
+        return [
+            "Pijama leve"
+        ]
+
+    #
+    # Warm
+    #
+
+    return [
+        "Pijama leve"
+    ]
+
+
 def generate_clothing_recommendation(weather):
 
     recommendation = {}
@@ -76,7 +142,7 @@ def generate_clothing_recommendation(weather):
 
     if needs_rain_jacket(weather):
 
-        outer = "impermeável leve"
+        outer = "Impermeável leve"
 
         morning_notes.append(
             "levar proteção para chuva"
@@ -84,7 +150,7 @@ def generate_clothing_recommendation(weather):
 
     elif needs_light_jacket(weather):
 
-        outer = "casaco corta-vento leve"
+        outer = "Casaco corta-vento leve"
 
         morning_notes.append(
             "vento mais forte durante a manhã"
@@ -98,8 +164,8 @@ def generate_clothing_recommendation(weather):
 
         recommendation["morning"] = build_period_recommendation(
             top=[
-                "t-shirt manga comprida",
-                "hoodie leve"
+                "T-shirt manga comprida",
+                "Hoodie leve"
             ],
             outer=outer,
             notes=[
@@ -116,12 +182,12 @@ def generate_clothing_recommendation(weather):
 
         recommendation["morning"] = build_period_recommendation(
             top=[
-                "t-shirt manga comprida leve",
-                "hoodie leve"
+                "T-shirt manga comprida leve",
+                "Hoodie leve"
             ],
             outer=outer,
             notes=[
-                "remover hoodie se aquecer durante o dia",
+                "pode remover o hoodie se aquecer",
                 *morning_notes
             ]
         )
@@ -134,7 +200,7 @@ def generate_clothing_recommendation(weather):
 
         recommendation["morning"] = build_period_recommendation(
             top=[
-                "t-shirt manga curta"
+                "T-shirt manga curta"
             ],
             notes=[
                 "evitar excesso de roupa logo pela manhã"
@@ -149,7 +215,7 @@ def generate_clothing_recommendation(weather):
 
         recommendation["morning"] = build_period_recommendation(
             top=[
-                "t-shirt leve"
+                "T-shirt leve"
             ],
             outer=outer,
             notes=morning_notes
@@ -165,7 +231,7 @@ def generate_clothing_recommendation(weather):
 
     if needs_rain_jacket(weather):
 
-        outer = "impermeável leve"
+        outer = "Impermeável leve"
 
         afternoon_notes.append(
             "possibilidade de chuva durante a tarde"
@@ -179,8 +245,8 @@ def generate_clothing_recommendation(weather):
 
         recommendation["afternoon"] = build_period_recommendation(
             top=[
-                "t-shirt manga comprida leve",
-                "hoodie leve"
+                "T-shirt manga comprida leve",
+                "Hoodie leve"
             ],
             outer=outer,
             notes=[
@@ -197,13 +263,10 @@ def generate_clothing_recommendation(weather):
 
         recommendation["afternoon"] = build_period_recommendation(
             top=[
-                "t-shirt manga comprida leve"
+                "T-shirt manga comprida leve"
             ],
             outer=outer,
-            notes=[
-                "temperatura amena durante a tarde",
-                *afternoon_notes
-            ]
+            notes=afternoon_notes
         )
 
     #
@@ -214,7 +277,7 @@ def generate_clothing_recommendation(weather):
 
         recommendation["afternoon"] = build_period_recommendation(
             top=[
-                "t-shirt manga curta"
+                "T-shirt manga curta"
             ],
             notes=[
                 "evitar excesso de roupa devido à atividade física"
@@ -229,7 +292,7 @@ def generate_clothing_recommendation(weather):
 
         recommendation["afternoon"] = build_period_recommendation(
             top=[
-                "t-shirt leve"
+                "T-shirt leve"
             ],
             outer=outer,
             notes=afternoon_notes
@@ -245,7 +308,7 @@ def generate_clothing_recommendation(weather):
 
     if needs_light_jacket(weather):
 
-        outer = "casaco leve"
+        outer = "Casaco leve"
 
         evening_notes.append(
             "vento mais fresco ao final do dia"
@@ -259,7 +322,7 @@ def generate_clothing_recommendation(weather):
 
         recommendation["evening"] = build_period_recommendation(
             top=[
-                "hoodie leve"
+                "Hoodie leve"
             ],
             outer=outer,
             notes=evening_notes
@@ -273,7 +336,7 @@ def generate_clothing_recommendation(weather):
 
         recommendation["evening"] = build_period_recommendation(
             top=[
-                "t-shirt manga comprida leve"
+                "T-shirt manga comprida leve"
             ],
             outer=outer,
             notes=evening_notes
@@ -287,7 +350,7 @@ def generate_clothing_recommendation(weather):
 
         recommendation["evening"] = build_period_recommendation(
             top=[
-                "t-shirt leve"
+                "T-shirt leve"
             ],
             notes=[
                 "temperatura ainda elevada ao final do dia"
@@ -302,10 +365,18 @@ def generate_clothing_recommendation(weather):
 
         recommendation["evening"] = build_period_recommendation(
             top=[
-                "t-shirt leve"
+                "T-shirt leve"
             ],
             outer=outer,
             notes=evening_notes
         )
+
+    #
+    # Night
+    #
+
+    recommendation["night"] = build_period_recommendation(
+        sleep_layers=get_sleep_layers(profile)
+    )
 
     return recommendation

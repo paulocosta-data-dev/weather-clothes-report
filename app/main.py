@@ -1,6 +1,7 @@
 import json
 import requests
 from pathlib import Path
+from datetime import datetime
 
 from weather.normalize import normalize_ipma
 from rules.clothing_rules import generate_clothing_recommendation
@@ -59,8 +60,10 @@ def main():
 
     print(formatted_email)
     
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    
     send_email(
-    subject="Relatório roupa criança",
+    subject=f"Meteo - {timestamp}",
     body=formatted_email
     )
 

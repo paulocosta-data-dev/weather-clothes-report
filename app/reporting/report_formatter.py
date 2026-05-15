@@ -10,6 +10,9 @@ def format_section(title, section):
     if section["outer"]:
         lines.append(f"• {section['outer']}")
 
+    for item in section["sleep_layers"]:
+        lines.append(f"• {item}")
+
     if section["notes"]:
 
         for note in section["notes"]:
@@ -28,25 +31,15 @@ def format_report_email(report):
     lines = []
 
     #
-    # Header
-    #
-
-    lines.append(
-        f"Relatório roupa criança — {weather['forecast_date']}"
-    )
-
-    lines.append("")
-
-    #
     # Weather summary
     #
 
     lines.append(
-        f"🌡 {weather['temp_min']}°C → {weather['temp_max']}°C"
+        f"🌡 {round(weather['temp_min'])}°C → {round(weather['temp_max'])}°C"
     )
 
     lines.append(
-        f"🌧 Chuva: {weather['rain_probability']}%"
+        f"🌧 Chuva: {round(weather['rain_probability'])}%"
     )
 
     lines.append("")
@@ -81,6 +74,17 @@ def format_report_email(report):
         format_section(
             "🌙 Final do dia",
             recommendation["evening"]
+        )
+    )
+
+    #
+    # Night
+    #
+
+    lines.extend(
+        format_section(
+            "😴 Dormir",
+            recommendation["night"]
         )
     )
 
