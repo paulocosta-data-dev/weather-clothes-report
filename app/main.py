@@ -1,72 +1,181 @@
 import json
-import requests
+
 from pathlib import Path
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
-from weather.normalize import normalize_ipma
-from rules.clothing_rules import generate_clothing_recommendation
-from reporting.report_formatter import format_report_email
-from reporting.sender import send_email
+from weather.ipma import fetch_weather
 
-URL = "https://api.ipma.pt/open-data/forecast/meteorology/cities/daily/1110600.json"
+from weather.normalize import (
+    normalize_ipma
+)
 
-OUTPUT_DIR = Path("/app/output")
-OUTPUT_FILE = OUTPUT_DIR / "report.json"
+from weather.open_meteo import (
+    fetch_hourly_weather,
+    normalize_hourly_weather,
+    filter_relevant_hours,
+    get_rain_windows
+)
+
+from rules.clothing_rules import (
+    generate_clothing_recommendation
+)
+
+from reporting.report_formatter import (
+    format_report_email
+)
+
+from reporting.sender import (
+    send_email
+)
 
 
-def fetch_weather():
+OUTPUT_DIR = Path(
+    "/app/output"
+)
 
-    response = requests.get(URL, timeout=10)
-
-    response.raise_for_status()
-
-    return response.json()
+OUTPUT_FILE = (
+    OUTPUT_DIR / "report.json"
+)
 
 
 def save_report(report):
 
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(
+        exist_ok=True
+    )
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
-        json.dump(report, file, indent=2, ensure_ascii=False)
+    with open(
+        OUTPUT_FILE,
+        "w",
+        encoding="utf-8"
+    ) as file:
+
+        json.dump(
+            report,
+            file,
+            indent=2,
+            ensure_ascii=False,
+            default=str
+        )
 
 
 def main():
 
-    raw_data = fetch_weather()
+    #
+    # Daily weather
+    #
 
-    weather = normalize_ipma(raw_data)
-    
-    ##weather = {
-    ##"forecast_date": "2026-03-12",
-    ##"temp_min": 15,
-    ##"temp_max": 19,
-    ##"rain_probability": 0,
-    ##"wind_direction": "N",
-    ##"wind_class": 3,
-    ##"weather_type": 2
-    ##}
+    raw_weather = (
+        fetch_weather()
+    )
 
-    recommendation = generate_clothing_recommendation(weather)
+    weather = normalize_ipma(
+        raw_weather
+    )
+
+    #
+    # Hourly weather
+    #
+
+    raw_hourly_weather = (
+        fetch_hourly_weather()
+    )
+
+    normalized_hourly_weather = (
+        normalize_hourly_weather(
+            raw_hourly_weather
+        )
+    )
+
+    hourly_weather = (
+        filter_relevant_hours(
+            normalized_hourly_weather
+        )
+    )
+
+    #
+    # Rain windows
+    #
+
+    rain_windows = (
+        get_rain_windows(
+            hourly_weather
+        )
+    )
+
+    #
+    # Recommendation
+    #
+
+    recommendation = (
+        generate_clothing_recommendation(
+            weather,
+            hourly_weather
+        )
+    )
+
+    #
+    # Final payload
+    #
 
     result = {
         "weather": weather,
-        "recommendation": recommendation
+        "hourly_weather": (
+            hourly_weather
+        ),
+        "rain_windows": (
+            rain_windows
+        ),
+        "recommendation": (
+            recommendation
+        )
     }
+
+    #
+    # Save
+    #
 
     save_report(result)
 
-    formatted_email = format_report_email(result)
+    #
+    # Format email
+    #
 
-    print(formatted_email)
-    
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-    
+    formatted_email = (
+        format_report_email(
+            result
+        )
+    )
+
+    print(
+        formatted_email
+    )
+
+    #
+    # Email subject
+    #
+
+    timestamp = datetime.now(
+        ZoneInfo(
+            "Europe/Lisbon"
+        )
+    ).strftime(
+        "%Y-%m-%d %H:%M"
+    )
+
+    #
+    # Send email
+    #
+
     send_email(
-    subject=f"Meteo - {timestamp}",
-    body=formatted_email
+        subject=(
+            f"Meteo - {timestamp}"
+        ),
+        body=formatted_email
     )
 
 
 if __name__ == "__main__":
+
     main()

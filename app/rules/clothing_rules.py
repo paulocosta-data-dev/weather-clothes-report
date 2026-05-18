@@ -1,382 +1,485 @@
-from config.settings import (
-    COLD_BEDROOM,
-    CHILD_UNCOVERS_AT_NIGHT
+from weather.open_meteo import (
+    get_hour_temperature
 )
 
 
 def build_period_recommendation(
-    top=None,
-    outer=None,
+    torso=None,
+    legs=None,
+    footwear=None,
+    socks=None,
     sleep_layers=None,
+    sleep_socks=None,
     notes=None
 ):
 
     return {
-        "top": top or [],
-        "outer": outer,
+        "torso": torso or [],
+        "legs": legs,
+        "footwear": footwear,
+        "socks": socks,
         "sleep_layers": sleep_layers or [],
+        "sleep_socks": sleep_socks,
         "notes": notes or []
     }
 
 
-WIND_CLASS_DESCRIPTION = {
-    1: "fraco",
-    2: "moderado",
-    3: "forte"
-}
+def get_hour_data(
+    hourly_weather,
+    target_hour
+):
+
+    for hour_data in hourly_weather:
+
+        if hour_data["time"].hour == target_hour:
+
+            return hour_data
+
+    return None
 
 
-def needs_rain_jacket(weather):
+def calculate_cold_score(
+    temperature,
+    humidity,
+    apparent_temperature
+):
 
-    return weather["rain_probability"] >= 30
+    score = 0
+
+    if temperature <= 9:
+        score += 5
+
+    elif temperature <= 11:
+        score += 4
+
+    elif temperature <= 13:
+        score += 3
+
+    elif temperature <= 16:
+        score += 2
+
+    elif temperature <= 19:
+        score += 1
+
+    if humidity >= 90:
+        score += 3
+
+    elif humidity >= 80:
+        score += 2
+
+    elif humidity >= 70:
+        score += 1
+
+    if apparent_temperature <= (
+        temperature - 3
+    ):
+
+        score += 2
+
+    elif apparent_temperature <= (
+        temperature - 1
+    ):
+
+        score += 1
+
+    return score
 
 
-def needs_light_jacket(weather):
+def get_day_strategy(hourly_weather):
 
-    return (
-        weather["wind_class"] >= 3
-        and weather["temp_min"] <= 12
+    morning = get_hour_data(
+        hourly_weather,
+        7
     )
 
+    if morning is None:
 
-def get_temperature_profile(weather):
+        return {
+            "torso": [
+                "T-shirt",
+                "Sweat manga comprida leve"
+            ],
+            "legs": (
+                "Calças leves"
+            ),
+            "footwear": (
+                "Ténis meia estação"
+            ),
+            "socks": (
+                "Meias leves"
+            ),
+            "notes": []
+        }
 
-    temp_min = weather["temp_min"]
-    temp_max = weather["temp_max"]
+    cold_score = calculate_cold_score(
+        temperature=morning["temperature"],
+        humidity=morning["humidity"],
+        apparent_temperature=(
+            morning["apparent_temperature"]
+        )
+    )
 
-    #
-    # Cold
-    #
+    if cold_score >= 7:
 
-    if temp_min <= 10:
-        return "cold"
-
-    #
-    # Mild
-    #
-
-    if temp_min <= 16:
-        return "mild"
-
-    #
-    # Hot
-    #
-
-    if temp_max >= 30:
-        return "hot"
-
-    #
-    # Warm
-    #
-
-    return "warm"
-
-
-def get_sleep_layers(profile):
-
-    #
-    # Cold
-    #
-
-    if profile == "cold":
-
-        if COLD_BEDROOM and CHILD_UNCOVERS_AT_NIGHT:
-
-            return [
-                "Body interior leve",
-                "Pijama manga comprida quente"
+        return {
+            "torso": [
+                "T-shirt",
+                "Sweat manga comprida",
+                "Casaco corta vento"
+            ],
+            "legs": (
+                "Collants e "
+                "calças grossas"
+            ),
+            "footwear": (
+                "Ténis meia estação"
+            ),
+            "socks": (
+                "Meias médias"
+            ),
+            "notes": [
+                (
+                    "manhã fria "
+                    "e húmida"
+                ),
+                (
+                    "remover o casaco "
+                    "quando aquecer"
+                )
             ]
+        }
 
-        return [
-            "Pijama manga comprida"
-        ]
+    if cold_score >= 4:
 
-    #
-    # Mild
-    #
-
-    if profile == "mild":
-
-        if COLD_BEDROOM:
-
-            return [
-                "Pijama manga comprida leve"
+        return {
+            "torso": [
+                "T-shirt",
+                (
+                    "Sweat manga "
+                    "comprida leve"
+                ),
+                (
+                    "Corta vento "
+                    "leve removível"
+                )
+            ],
+            "legs": (
+                "Leggings ou "
+                "calças leves"
+            ),
+            "footwear": (
+                "Ténis meia estação"
+            ),
+            "socks": (
+                "Meias leves"
+            ),
+            "notes": [
+                (
+                    "saída de casa "
+                    "fresca"
+                ),
+                (
+                    "tirar o corta vento "
+                    "na escola"
+                ),
+                (
+                    "se aquecer durante "
+                    "a tarde pode ficar "
+                    "apenas com a sweat"
+                )
             ]
+        }
 
-        return [
-            "Pijama leve"
+    if cold_score >= 2:
+
+        return {
+            "torso": [
+                (
+                    "T-shirt manga "
+                    "comprida leve"
+                ),
+                (
+                    "Sweat leve "
+                    "removível"
+                )
+            ],
+            "legs": (
+                "Calças leves"
+            ),
+            "footwear": (
+                "Ténis leves"
+            ),
+            "socks": (
+                "Meias leves"
+            ),
+            "notes": [
+                (
+                    "temperatura "
+                    "amena"
+                )
+            ]
+        }
+
+    return {
+        "torso": [
+            "T-shirt manga curta"
+        ],
+        "legs": (
+            "Calções ou vestido"
+        ),
+        "footwear": (
+            "Ténis respiráveis"
+        ),
+        "socks": (
+            "Meias finas"
+        ),
+        "notes": [
+            (
+                "evitar excesso "
+                "de roupa"
+            )
         ]
+    }
 
-    #
-    # Hot
-    #
 
-    if profile == "hot":
+def get_sleep_strategy(hourly_weather):
 
-        return [
+    evening = get_hour_data(
+        hourly_weather,
+        21
+    )
+
+    dawn = get_hour_data(
+        hourly_weather,
+        3
+    )
+
+    if (
+        evening is None
+        or dawn is None
+    ):
+
+        return {
+            "layers": [
+                "Pijama leve"
+            ],
+            "socks": None,
+            "notes": []
+        }
+
+    evening_temp = evening["temperature"]
+
+    dawn_temp = dawn["temperature"]
+
+    dawn_humidity = dawn["humidity"]
+
+    dawn_apparent = (
+        dawn["apparent_temperature"]
+    )
+
+    thermal_drop = (
+        evening_temp - dawn_temp
+    )
+
+    cold_score = calculate_cold_score(
+        temperature=dawn_temp,
+        humidity=dawn_humidity,
+        apparent_temperature=dawn_apparent
+    )
+
+    notes = []
+
+    if evening_temp >= 19:
+
+        notes.append(
+            (
+                "temperatura confortável "
+                "ao adormecer"
+            )
+        )
+
+    elif evening_temp <= 14:
+
+        notes.append(
+            (
+                "quarto fresco logo "
+                "ao início da noite"
+            )
+        )
+
+    if dawn_humidity >= 85:
+
+        notes.append(
+            (
+                "humidade elevada "
+                "durante a madrugada"
+            )
+        )
+
+    elif dawn_humidity >= 70:
+
+        notes.append(
+            (
+                "alguma humidade "
+                "durante a madrugada"
+            )
+        )
+
+    if thermal_drop >= 7:
+
+        notes.append(
+            (
+                "descida térmica prevista "
+                f"de {round(thermal_drop)}°C"
+            )
+        )
+
+    if cold_score >= 7:
+
+        return {
+            "layers": [
+                (
+                    "Body interior leve"
+                ),
+                (
+                    "Pijama manga "
+                    "comprida quente"
+                )
+            ],
+            "socks": (
+                "Meias leves"
+            ),
+            "notes": notes + [
+                (
+                    "conservar calor "
+                    "durante a madrugada"
+                ),
+                (
+                    "pés podem arrefecer "
+                    "durante a noite"
+                )
+            ]
+        }
+
+    if cold_score >= 5:
+
+        return {
+            "layers": [
+                (
+                    "Pijama manga "
+                    "comprida leve"
+                )
+            ],
+            "socks": (
+                "Meias leves"
+            ),
+            "notes": notes + [
+                (
+                    "temperatura mais fresca "
+                    "durante a madrugada"
+                ),
+                (
+                    "pés podem perder calor "
+                    "durante a noite"
+                )
+            ]
+        }
+
+    if (
+        evening_temp >= 20
+        and thermal_drop >= 6
+    ):
+
+        return {
+            "layers": [
+                (
+                    "Pijama leve "
+                    "respirável"
+                )
+            ],
+            "socks": None,
+            "notes": notes + [
+                (
+                    "evitar sobreaquecimento "
+                    "ao adormecer"
+                ),
+                (
+                    "o quarto poderá "
+                    "arrefecer durante "
+                    "a madrugada"
+                )
+            ]
+        }
+
+    if cold_score >= 3:
+
+        return {
+            "layers": [
+                (
+                    "Pijama manga "
+                    "comprida leve"
+                )
+            ],
+            "socks": (
+                "Meias muito leves"
+            ),
+            "notes": notes + [
+                (
+                    "temperatura relativamente "
+                    "estável durante a noite"
+                ),
+                (
+                    "meias leves podem ajudar "
+                    "a manter conforto térmico"
+                )
+            ]
+        }
+
+    return {
+        "layers": [
             "Pijama leve"
+        ],
+        "socks": None,
+        "notes": notes + [
+            (
+                "evitar excesso "
+                "de calor"
+            )
         ]
-
-    #
-    # Warm
-    #
-
-    return [
-        "Pijama leve"
-    ]
+    }
 
 
-def generate_clothing_recommendation(weather):
+def generate_clothing_recommendation(
+    weather,
+    hourly_weather
+):
+
+    day = get_day_strategy(
+        hourly_weather
+    )
+
+    sleep = get_sleep_strategy(
+        hourly_weather
+    )
 
     recommendation = {}
 
-    profile = get_temperature_profile(weather)
-
-    #
-    # Morning
-    #
-
-    morning_notes = []
-
-    outer = None
-
-    if needs_rain_jacket(weather):
-
-        outer = "Impermeável leve"
-
-        morning_notes.append(
-            "levar proteção para chuva"
+    recommendation["day"] = (
+        build_period_recommendation(
+            torso=day["torso"],
+            legs=day["legs"],
+            footwear=day["footwear"],
+            socks=day["socks"],
+            notes=day["notes"]
         )
+    )
 
-    elif needs_light_jacket(weather):
-
-        outer = "Casaco corta-vento leve"
-
-        morning_notes.append(
-            "vento mais forte durante a manhã"
+    recommendation["night"] = (
+        build_period_recommendation(
+            sleep_layers=sleep["layers"],
+            sleep_socks=sleep["socks"],
+            notes=sleep["notes"]
         )
-
-    #
-    # Cold morning
-    #
-
-    if profile == "cold":
-
-        recommendation["morning"] = build_period_recommendation(
-            top=[
-                "T-shirt manga comprida",
-                "Hoodie leve"
-            ],
-            outer=outer,
-            notes=[
-                "criança ativa, usar camadas removíveis",
-                *morning_notes
-            ]
-        )
-
-    #
-    # Mild morning
-    #
-
-    elif profile == "mild":
-
-        recommendation["morning"] = build_period_recommendation(
-            top=[
-                "T-shirt manga comprida leve",
-                "Hoodie leve"
-            ],
-            outer=outer,
-            notes=[
-                "pode remover o hoodie se aquecer",
-                *morning_notes
-            ]
-        )
-
-    #
-    # Hot morning
-    #
-
-    elif profile == "hot":
-
-        recommendation["morning"] = build_period_recommendation(
-            top=[
-                "T-shirt manga curta"
-            ],
-            notes=[
-                "evitar excesso de roupa logo pela manhã"
-            ]
-        )
-
-    #
-    # Warm morning
-    #
-
-    else:
-
-        recommendation["morning"] = build_period_recommendation(
-            top=[
-                "T-shirt leve"
-            ],
-            outer=outer,
-            notes=morning_notes
-        )
-
-    #
-    # Afternoon
-    #
-
-    afternoon_notes = []
-
-    outer = None
-
-    if needs_rain_jacket(weather):
-
-        outer = "Impermeável leve"
-
-        afternoon_notes.append(
-            "possibilidade de chuva durante a tarde"
-        )
-
-    #
-    # Cold afternoon
-    #
-
-    if profile == "cold":
-
-        recommendation["afternoon"] = build_period_recommendation(
-            top=[
-                "T-shirt manga comprida leve",
-                "Hoodie leve"
-            ],
-            outer=outer,
-            notes=[
-                "temperatura fresca durante o dia",
-                *afternoon_notes
-            ]
-        )
-
-    #
-    # Mild afternoon
-    #
-
-    elif profile == "mild":
-
-        recommendation["afternoon"] = build_period_recommendation(
-            top=[
-                "T-shirt manga comprida leve"
-            ],
-            outer=outer,
-            notes=afternoon_notes
-        )
-
-    #
-    # Hot afternoon
-    #
-
-    elif profile == "hot":
-
-        recommendation["afternoon"] = build_period_recommendation(
-            top=[
-                "T-shirt manga curta"
-            ],
-            notes=[
-                "evitar excesso de roupa devido à atividade física"
-            ]
-        )
-
-    #
-    # Warm afternoon
-    #
-
-    else:
-
-        recommendation["afternoon"] = build_period_recommendation(
-            top=[
-                "T-shirt leve"
-            ],
-            outer=outer,
-            notes=afternoon_notes
-        )
-
-    #
-    # Evening
-    #
-
-    evening_notes = []
-
-    outer = None
-
-    if needs_light_jacket(weather):
-
-        outer = "Casaco leve"
-
-        evening_notes.append(
-            "vento mais fresco ao final do dia"
-        )
-
-    #
-    # Cold evening
-    #
-
-    if profile == "cold":
-
-        recommendation["evening"] = build_period_recommendation(
-            top=[
-                "Hoodie leve"
-            ],
-            outer=outer,
-            notes=evening_notes
-        )
-
-    #
-    # Mild evening
-    #
-
-    elif profile == "mild":
-
-        recommendation["evening"] = build_period_recommendation(
-            top=[
-                "T-shirt manga comprida leve"
-            ],
-            outer=outer,
-            notes=evening_notes
-        )
-
-    #
-    # Hot evening
-    #
-
-    elif profile == "hot":
-
-        recommendation["evening"] = build_period_recommendation(
-            top=[
-                "T-shirt leve"
-            ],
-            notes=[
-                "temperatura ainda elevada ao final do dia"
-            ]
-        )
-
-    #
-    # Warm evening
-    #
-
-    else:
-
-        recommendation["evening"] = build_period_recommendation(
-            top=[
-                "T-shirt leve"
-            ],
-            outer=outer,
-            notes=evening_notes
-        )
-
-    #
-    # Night
-    #
-
-    recommendation["night"] = build_period_recommendation(
-        sleep_layers=get_sleep_layers(profile)
     )
 
     return recommendation

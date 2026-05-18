@@ -1,91 +1,209 @@
-def format_section(title, section):
-
-    lines = []
-
-    lines.append(title)
-
-    for item in section["top"]:
-        lines.append(f"• {item}")
-
-    if section["outer"]:
-        lines.append(f"• {section['outer']}")
-
-    for item in section["sleep_layers"]:
-        lines.append(f"• {item}")
-
-    if section["notes"]:
-
-        for note in section["notes"]:
-            lines.append(f"  - {note}")
-
-    lines.append("")
-
-    return lines
-
-
 def format_report_email(report):
 
     weather = report["weather"]
-    recommendation = report["recommendation"]
+
+    rain_windows = (
+        report["rain_windows"]
+    )
+
+    recommendation = (
+        report["recommendation"]
+    )
 
     lines = []
 
     #
-    # Weather summary
+    # Header
     #
 
     lines.append(
-        f"🌡 {round(weather['temp_min'])}°C → {round(weather['temp_max'])}°C"
+        (
+            f"🌡 "
+            f"{round(weather['temp_min'])}°C"
+            f" → "
+            f"{round(weather['temp_max'])}°C"
+        )
     )
 
     lines.append(
-        f"🌧 Chuva: {round(weather['rain_probability'])}%"
+        (
+            f"🌧 Chuva: "
+            f"{round(weather['rain_probability'])}%"
+        )
     )
+
+    #
+    # Rain windows
+    #
+
+    if rain_windows:
+
+        lines.append("")
+
+        lines.append(
+            "☔"
+        )
+
+        for rain in rain_windows:
+
+            lines.append(
+                (
+                    f"• {rain['hour']} "
+                    f"({rain['probability']}%)"
+                )
+            )
 
     lines.append("")
 
     #
-    # Morning
+    # Day
     #
 
-    lines.extend(
-        format_section(
-            "☀️ Manhã",
-            recommendation["morning"]
+    day = recommendation["day"]
+
+    #
+    # Torso
+    #
+
+    lines.append("☀️")
+
+    lines.append("👕")
+
+    for item in day["torso"]:
+
+        lines.append(
+            f"• {item}"
         )
-    )
+
+    lines.append("")
 
     #
-    # Afternoon
+    # Legs
     #
 
-    lines.extend(
-        format_section(
-            "🌤 Tarde",
-            recommendation["afternoon"]
+    if day["legs"]:
+
+        lines.append(
+            "🩳"
         )
-    )
 
-    #
-    # Evening
-    #
-
-    lines.extend(
-        format_section(
-            "🌙 Final do dia",
-            recommendation["evening"]
+        lines.append(
+            f"• {day['legs']}"
         )
-    )
+
+        lines.append("")
+
+    #
+    # Footwear
+    #
+
+    if day["footwear"]:
+
+        lines.append(
+            "👟"
+        )
+
+        lines.append(
+            f"• {day['footwear']}"
+        )
+
+        lines.append("")
+
+    #
+    # Socks
+    #
+
+    if day["socks"]:
+
+        lines.append(
+            "🧦"
+        )
+
+        lines.append(
+            f"• {day['socks']}"
+        )
+
+    #
+    # Notes
+    #
+
+    if day["notes"]:
+
+        lines.append("")
+
+        for note in day["notes"]:
+
+            formatted_note = (
+                note[0].upper()
+                + note[1:]
+            )
+
+            lines.append(
+                f"  - {formatted_note}"
+            )
+
+    lines.append("")
 
     #
     # Night
     #
 
-    lines.extend(
-        format_section(
-            "😴 Dormir",
-            recommendation["night"]
+    night = recommendation["night"]
+
+    lines.append("🌙")
+
+    #
+    # Sleep layers
+    #
+
+    lines.append("🛌")
+
+    for layer in (
+        night["sleep_layers"]
+    ):
+
+        lines.append(
+            f"• {layer}"
         )
-    )
+
+    lines.append("")
+
+    #
+    # Sleep socks
+    #
+
+    if night["sleep_socks"]:
+
+        lines.append(
+            "🧦"
+        )
+
+        lines.append(
+            (
+                f"• "
+                f"{night['sleep_socks']}"
+            )
+        )
+
+    #
+    # Night notes
+    #
+
+    if night["notes"]:
+
+        lines.append("")
+
+        for note in (
+            night["notes"]
+        ):
+
+            formatted_note = (
+                note[0].upper()
+                + note[1:]
+            )
+
+            lines.append(
+                f"  - {formatted_note}"
+            )
 
     return "\n".join(lines)

@@ -2,51 +2,77 @@ import os
 import smtplib
 
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
-def send_email(subject, body):
+SMTP_SERVER = os.getenv("SMTP_SERVER")
 
-    smtp_server = os.getenv("SMTP_SERVER")
-    smtp_port = int(os.getenv("SMTP_PORT"))
+SMTP_PORT = int(
+    os.getenv("SMTP_PORT", 587)
+)
 
-    smtp_username = os.getenv("SMTP_USERNAME")
-    smtp_password = os.getenv("SMTP_PASSWORD")
+SMTP_USERNAME = os.getenv(
+    "SMTP_USERNAME"
+)
 
-    email_from = os.getenv("EMAIL_FROM")
+SMTP_PASSWORD = os.getenv(
+    "SMTP_PASSWORD"
+)
+
+EMAIL_FROM = os.getenv(
+    "EMAIL_FROM"
+)
+
+EMAIL_TO = os.getenv(
+    "EMAIL_TO"
+)
+
+EMAIL_TO_2 = os.getenv(
+    "EMAIL_TO_2"
+)
+
+
+def send_email(
+    subject,
+    body
+):
 
     recipients = [
-        os.getenv("EMAIL_TO"),
-        os.getenv("EMAIL_TO_2")
+        EMAIL_TO,
+        EMAIL_TO_2
     ]
 
-    recipients = [email for email in recipients if email]
+    recipients = [
+        email
+        for email in recipients
+        if email
+    ]
 
-    message = MIMEMultipart()
-
-    message["From"] = email_from
-    message["To"] = ", ".join(recipients)
-    message["Subject"] = subject
-
-    message.attach(
-        MIMEText(body, "plain", "utf-8")
+    message = MIMEText(
+        body,
+        "plain",
+        "utf-8"
     )
 
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
+    message["Subject"] = subject
+
+    message["From"] = EMAIL_FROM
+
+    message["To"] = ", ".join(recipients)
+
+    with smtplib.SMTP(
+        SMTP_SERVER,
+        SMTP_PORT
+    ) as server:
 
         server.starttls()
 
         server.login(
-            smtp_username,
-            smtp_password
+            SMTP_USERNAME,
+            SMTP_PASSWORD
         )
 
         server.sendmail(
-            email_from,
+            EMAIL_FROM,
             recipients,
             message.as_string()
         )
