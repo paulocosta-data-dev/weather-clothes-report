@@ -1,13 +1,9 @@
-name: Weather Clothes Report
+name: Meteo Report
 
 on:
-  schedule:
-    - cron: "0 1 * * *"
-
   workflow_dispatch:
 
 jobs:
-
   send-report:
 
     runs-on: ubuntu-latest
