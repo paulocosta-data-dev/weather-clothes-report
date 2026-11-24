@@ -11,7 +11,7 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: - uses: actions/checkout@v7
+        uses: actions/checkout@v7
 
       - name: Build Docker image
         run: docker build -t weather-report .
