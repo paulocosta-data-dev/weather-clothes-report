@@ -1,4 +1,5 @@
 import requests
+from weather.http_client import fetch_json
 
 
 URL = (
@@ -8,12 +9,4 @@ URL = (
 
 
 def fetch_weather():
-
-    response = requests.get(
-        URL,
-        timeout=10
-    )
-
-    response.raise_for_status()
-
-    return response.json()
+    return fetch_json(URL)
